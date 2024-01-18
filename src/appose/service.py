@@ -63,6 +63,8 @@ class Service:
         self._stderr_thread: Optional[threading.Thread] = None
         self._monitor_thread: Optional[threading.Thread] = None
         self._debug_callback: Optional[Callable[[Any], Any]] = None
+        self._globals = {}
+        self._locals = {}
 
     def debug(self, debug_callback: Callable[[Any], Any]) -> None:
         """
@@ -118,7 +120,7 @@ class Service:
             Optional list of key/value pairs to feed into the script as inputs.
         """
         self.start()
-        return Task(self, script, inputs)
+        return Task(self, script, inputs, self._globals, self._locals)
 
     def close(self) -> None:
         """
@@ -169,6 +171,7 @@ class Service:
                 # Skip it and keep going, but log it first.
                 self._debug_service(f"<INVALID> {line}")
 
+
     def _stderr_loop(self) -> None:
         """
         Input loop processing lines from the worker's stderr stream.
@@ -187,19 +190,16 @@ class Service:
 
     def _monitor_loop(self) -> None:
         # Wait until the worker process terminates.
-        self._process.wait()
+        while self._process.wait(50) is None:
+            pass
 
         # Do some sanity checks.
         exit_code = self._process.returncode
         if exit_code != 0:
-            self._debug_service(
-                f"<worker process terminated with exit code {exit_code}>"
-            )
+            self._debug_service(f"<worker process terminated with exit code {exit_code}>")
         task_count = len(self._tasks)
         if task_count > 0:
-            self._debug_service(
-                f"<worker process terminated with {task_count} pending tasks>"
-            )
+            self._debug_service(f"<worker process terminated with {task_count} pending tasks>")
 
         # Notify any remaining tasks about the process crash.
         for task in self._tasks.values():

@@ -43,10 +43,16 @@ from appose.types import Args, decode, encode
 
 
 class Task:
-    def __init__(self, uuid: str) -> None:
+    def __init__(self, uuid: str, _globals: dict = None, _locals: dict = None) -> None:
+        if _globals is None:
+            _globals = {}
+        if _locals is None:
+            _locals = {}
         self.uuid = uuid
         self.outputs = {}
         self.cancel_requested = False
+        self._globals = _globals
+        self._locals = _locals
 
     def update(
         self,
@@ -104,12 +110,13 @@ class Task:
                 ):
                     # Last statement of the script looks like an expression. Evaluate!
                     last = ast.Expression(block.body.pop().value)
-
-                _globals = {}
-                exec(compile(block, "<string>", mode="exec"), _globals, binding)
+                binding.update(self._locals)
+                task = self
+                locals().update(inputs)
+                exec(compile(block, "<string>", mode="exec"))
                 if last is not None:
                     result = eval(
-                        compile(last, "<string>", mode="eval"), _globals, binding
+                        compile(last, "<string>", mode="eval")
                     )
             except Exception:
                 self.fail(traceback.format_exc())

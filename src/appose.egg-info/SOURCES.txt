@@ -1,0 +1,15 @@
+LICENSE.txt
+README.md
+pyproject.toml
+src/appose/__init__.py
+src/appose/environment.py
+src/appose/paths.py
+src/appose/python_worker.py
+src/appose/service.py
+src/appose/types.py
+src/appose.egg-info/PKG-INFO
+src/appose.egg-info/SOURCES.txt
+src/appose.egg-info/dependency_links.txt
+src/appose.egg-info/requires.txt
+src/appose.egg-info/top_level.txt
+tests/test_appose.py
